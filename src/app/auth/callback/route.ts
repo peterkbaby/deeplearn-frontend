@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { REFRESH_COOKIE } from "@/lib/session";
+import { REFRESH_COOKIE, secureCookies } from "@/lib/session";
 
 const tokenSchema = z
   .string()
@@ -25,9 +25,7 @@ export async function GET(request: NextRequest) {
   }
   const options = {
     httpOnly: true,
-    secure:
-      process.env.AUTH_COOKIE_SECURE !== "false" &&
-      process.env.NODE_ENV === "production",
+    secure: secureCookies,
     sameSite: "lax" as const,
     path: "/",
   };

@@ -8,11 +8,12 @@ import { api, ApiError } from "./api";
 import { userSchema, safeDestination } from "./contracts";
 export const ACCESS_COOKIE = "still_access";
 export const REFRESH_COOKIE = "still_refresh";
+export const secureCookies =
+  process.env.AUTH_COOKIE_SECURE !== "false" &&
+  process.env.APP_ORIGIN?.startsWith("https://") === true;
 const cookieOptions = {
   httpOnly: true,
-  secure:
-    process.env.AUTH_COOKIE_SECURE !== "false" &&
-    process.env.NODE_ENV === "production",
+  secure: secureCookies,
   sameSite: "lax" as const,
   path: "/",
 };
