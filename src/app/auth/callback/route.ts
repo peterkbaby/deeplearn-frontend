@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { REFRESH_COOKIE, secureCookies } from "@/lib/session";
+import { ACCESS_COOKIE, REFRESH_COOKIE, secureCookies } from "@/lib/session";
 
 const tokenSchema = z
   .string()
@@ -31,6 +31,10 @@ export async function GET(request: NextRequest) {
   completeUrl.search = "";
   completeUrl.searchParams.set("access_token", access);
   const response = NextResponse.redirect(completeUrl);
+  response.cookies.set(ACCESS_COOKIE, access, {
+    ...options,
+    maxAge: 7 * 86400,
+  });
   response.cookies.set(REFRESH_COOKIE, refresh, {
     ...options,
     maxAge: 7 * 86400,
