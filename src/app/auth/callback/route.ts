@@ -12,9 +12,17 @@ export async function GET(request: NextRequest) {
   const access = request.nextUrl.searchParams.get("access_token");
   const upstreamName = process.env.AUTH_REFRESH_COOKIE_NAME || "refresh_token";
   const refresh = request.cookies.get(upstreamName)?.value;
-  const publicOrigin = (
-    process.env.APP_ORIGIN?.replace(/\/$/, "") || request.nextUrl.origin
-  ).replace("://0.0.0.0", "://localhost");
+  let publicOrigin = request.nextUrl.origin;
+  const configuredOrigin = process.env.APP_ORIGIN;
+  if (configuredOrigin) {
+    try {
+      const candidate = new URL(configuredOrigin);
+      if (!["localhost", "127.0.0.1", "0.0.0.0"].includes(candidate.hostname))
+        publicOrigin = candidate.origin;
+    } catch {
+      // Keep the incoming origin when the deployment value is malformed.
+    }
+  }
   if (
     !access ||
     !tokenSchema.safeParse(access).success ||
