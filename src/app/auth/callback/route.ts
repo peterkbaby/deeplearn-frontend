@@ -12,7 +12,12 @@ export async function GET(request: NextRequest) {
   const access = request.nextUrl.searchParams.get("access_token");
   const upstreamName = process.env.AUTH_REFRESH_COOKIE_NAME || "refresh_token";
   const refresh = request.cookies.get(upstreamName)?.value;
-  let publicOrigin = request.nextUrl.origin;
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  const forwardedHost =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
+  let publicOrigin = forwardedHost
+    ? `${forwardedProto.split(",")[0].trim()}://${forwardedHost}`
+    : "";
   const configuredOrigin = process.env.APP_ORIGIN;
   if (configuredOrigin) {
     try {
@@ -23,6 +28,7 @@ export async function GET(request: NextRequest) {
       // Keep the incoming origin when the deployment value is malformed.
     }
   }
+  if (!publicOrigin) publicOrigin = new URL(request.url).origin;
   if (
     !access ||
     !tokenSchema.safeParse(access).success ||
