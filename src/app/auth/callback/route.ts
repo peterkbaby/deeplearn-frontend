@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
   }
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure:
+      process.env.AUTH_COOKIE_SECURE !== "false" &&
+      process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
   };

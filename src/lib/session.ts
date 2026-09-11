@@ -10,7 +10,9 @@ export const ACCESS_COOKIE = "still_access";
 export const REFRESH_COOKIE = "still_refresh";
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure:
+    process.env.AUTH_COOKIE_SECURE !== "false" &&
+    process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
 };

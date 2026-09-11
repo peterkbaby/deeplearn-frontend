@@ -94,7 +94,7 @@ npm run build
 npm start
 ```
 
-Set `AUTH_API_URL`, `APP_ORIGIN` (the public frontend origin, without a trailing slash), and, if customized in FastAPI, `AUTH_REFRESH_COOKIE_NAME`. Serve production over HTTPS; secure cookies will not work over plain HTTP. Ensure the server can reach your backend and any reverse proxy preserves the public origin/host for POST origin checks. No secret from the backend `.env` belongs in this project. Keep the lockfile committed and use `npm ci` for repeatable installs.
+Set `AUTH_API_URL`, `APP_ORIGIN` (the public frontend origin, without a trailing slash), and, if customized in FastAPI, `AUTH_REFRESH_COOKIE_NAME`. Serve production over HTTPS. If the EC2 frontend is temporarily served over plain HTTP, set `AUTH_COOKIE_SECURE=false`; browsers reject Secure cookies over HTTP and every protected page will appear to redirect back to login. Ensure the server can reach your backend and any reverse proxy preserves the public origin/host for POST origin checks. No secret from the backend `.env` belongs in this project. Keep the lockfile committed and use `npm ci` for repeatable installs.
 
 The configuration also emits standalone output. To deploy it directly, copy `.next/static` to `.next/standalone/.next/static` alongside `.next/standalone/server.js`, then run that server with the environment set. This app requires a server runtime and cannot be deployed as a static export.
 

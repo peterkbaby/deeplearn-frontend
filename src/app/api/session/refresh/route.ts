@@ -9,9 +9,10 @@ import {
 } from "@/lib/session";
 export async function POST(request: NextRequest) {
   // This endpoint changes cookies, so only same-origin browser requests may call it.
-  const expectedOrigin =
+  const expectedOrigin = (
     process.env.APP_ORIGIN ||
-    `${request.nextUrl.protocol}//${request.headers.get("host")}`;
+    `${request.nextUrl.protocol}//${request.headers.get("host")}`
+  ).replace(/\/$/, "");
   if (request.headers.get("origin") !== expectedOrigin)
     return NextResponse.json(
       { error: "Request not allowed." },
