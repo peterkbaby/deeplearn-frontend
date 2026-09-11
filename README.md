@@ -42,7 +42,7 @@ src/
 
 ## Authentication
 
-The browser sends forms to Next.js Server Actions. Next.js talks to FastAPI and stores the returned access token and refresh cookie in host-only, HTTP-only, SameSite=Lax cookies. Production cookies are Secure. Tokens never enter client props or localStorage. FastAPI's refresh cookie is relayed server-to-server, so separate frontend/backend domains do not require browser CORS configuration.
+The browser sends forms to Next.js Server Actions. Next.js talks to FastAPI, stores the access token in localStorage for client-side use, and stores the rotating refresh token in a host-only, HTTP-only, SameSite=Lax cookie. For server-rendered protected pages, Next.js also keeps a short-lived server-readable access cookie; this is required because Server Components cannot read localStorage. Production cookies are Secure. FastAPI's refresh cookie is relayed server-to-server, so separate frontend/backend domains do not require browser CORS configuration.
 
 Each guarded server render calls `/me` with the access token. Invalid/missing access with a refresh cookie goes to `/session`, which performs a same-origin POST to refresh and then returns to an allowlisted page. FastAPI rotates the refresh token; both local cookies are updated. Web Locks serialize refresh requests between tabs on supported browsers. Without Web Locks, simultaneous refreshes can cause a session to require login again; this fails closed. Transient backend errors offer retry rather than clearing the session.
 

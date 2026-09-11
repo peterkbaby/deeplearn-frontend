@@ -4,12 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { api, errorMessage } from "./api";
-import {
-  loginSchema,
-  registerSchema,
-  safeDestination,
-  type FormState,
-} from "./contracts";
+import { loginSchema, registerSchema, type FormState } from "./contracts";
 import {
   saveSession,
   clearSession,
@@ -26,8 +21,9 @@ export async function loginAction(
   const result = loginSchema.safeParse(Object.fromEntries(form));
   if (!result.success)
     return { fields: z.flattenError(result.error).fieldErrors };
+  let accessToken: string;
   try {
-    await saveSession(
+    accessToken = await saveSession(
       await api("/login", {
         method: "POST",
         body: JSON.stringify(result.data),
@@ -36,7 +32,7 @@ export async function loginAction(
   } catch (error) {
     return { error: errorMessage(error) };
   }
-  redirect(safeDestination(form.get("next")));
+  return { success: "Signed in.", accessToken };
 }
 export async function registerAction(
   _: FormState,

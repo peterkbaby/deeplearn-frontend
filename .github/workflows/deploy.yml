@@ -19,6 +19,7 @@ jobs:
             cd ~/deeplearn-frontend
             git pull origin main
             npm ci
+            rm -rf .next
             npm run build
             sudo systemctl restart frontend
             sudo systemctl status frontend --no-pager 

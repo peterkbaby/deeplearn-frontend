@@ -956,6 +956,50 @@ input[name="password"] {
   display: block;
   flex: 0 0 72px;
 }
+.toast-region {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: grid;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.global-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px 13px 16px;
+  border: 1px solid #e7cfc7;
+  border-radius: 7px;
+  background: #fff8f5;
+  color: #984d3a;
+  box-shadow: 0 10px 30px #26393220;
+  font-size: 12px;
+  line-height: 1.5;
+  animation: arrive 0.2s ease-out;
+}
+.global-toast.success {
+  background: #f1f7ec;
+  border-color: #d6e5ca;
+  color: #4a7044;
+}
+.global-toast.info {
+  background: #f1f4ef;
+  border-color: #dce4d9;
+  color: #506450;
+}
+.global-toast button {
+  border: 0;
+  background: transparent;
+  color: currentColor;
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  margin-left: auto;
+}
 .photo-avatar-wrap {
   width: 72px;
   height: 72px;

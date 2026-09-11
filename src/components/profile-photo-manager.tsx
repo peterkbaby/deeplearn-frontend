@@ -1,9 +1,16 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Eye, LoaderCircle, Trash2, Upload, X } from "lucide-react";
 import { deletePhotoAction, uploadAction } from "@/lib/actions";
+import { useToast } from "@/components/toast";
 
 async function cropImage(source: string, crop: Area): Promise<Blob> {
   const image = new Image();
@@ -59,14 +66,20 @@ export function ProfilePhotoManager({
     {},
   );
   const [busy, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   function chooseFile(file: File | undefined) {
     if (!file) return;
-    if (
-      file.size > 2 * 1024 * 1024 ||
-      !["image/jpeg", "image/png", "image/webp"].includes(file.type)
-    )
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("That image is too large. Please choose a file under 2 MB.");
+      if (input.current) input.current.value = "";
       return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("Please choose a JPEG, PNG, or WebP image.");
+      if (input.current) input.current.value = "";
+      return;
+    }
     setSelected(URL.createObjectURL(file));
     setCrop({ x: 0, y: 0 });
     setZoom(1);
@@ -95,6 +108,10 @@ export function ProfilePhotoManager({
     });
   }
   const initials = name.slice(0, 1).toUpperCase();
+  useEffect(() => {
+    const error = uploadState.error || deleteState.error;
+    if (error) showToast(error);
+  }, [uploadState.error, deleteState.error, showToast]);
   return (
     <div className={`photo-manager${compact ? " compact" : ""}`}>
       <div className="photo-avatar-wrap">

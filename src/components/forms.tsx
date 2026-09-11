@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -104,6 +104,12 @@ export function AuthForm({
     isLogin ? loginAction : registerAction,
     {},
   );
+  useEffect(() => {
+    if (state.accessToken) {
+      localStorage.setItem("still_access", state.accessToken);
+      window.location.assign(next);
+    }
+  }, [state.accessToken, next]);
   return (
     <form action={action} className="auth-form">
       <input type="hidden" name="next" value={next} />
@@ -176,7 +182,11 @@ export function AuthForm({
 export function LogoutButton() {
   const [state, action, pending] = useActionState(logoutAction, {});
   return (
-    <form action={action} className="logout-form">
+    <form
+      action={action}
+      className="logout-form"
+      onSubmit={() => localStorage.removeItem("still_access")}
+    >
       <button
         className="icon-button"
         disabled={pending}

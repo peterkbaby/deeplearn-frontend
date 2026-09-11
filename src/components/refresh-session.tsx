@@ -23,6 +23,8 @@ export function RefreshSession({ next }: { next: string }) {
           setError(data.error || "We couldn’t reconnect. Try again.");
           return;
         }
+        if (typeof data.access_token === "string")
+          localStorage.setItem("still_access", data.access_token);
         window.location.replace(next);
       } catch {
         setError("We couldn’t reconnect. Check your connection and try again.");

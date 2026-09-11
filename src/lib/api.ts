@@ -24,9 +24,14 @@ export async function api(
       url: `${base.replace(/\/$/, "")}/user-service${path}`,
       method: init.method || "GET",
       data: init.body as unknown,
-      headers: init.headers
-        ? Object.fromEntries(new Headers(init.headers).entries())
-        : undefined,
+      headers: {
+        ...(init.body instanceof FormData
+          ? {}
+          : { "Content-Type": "application/json" }),
+        ...(init.headers
+          ? Object.fromEntries(new Headers(init.headers).entries())
+          : {}),
+      },
       timeout: 12_000,
       validateStatus: () => true,
     });

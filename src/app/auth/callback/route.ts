@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/session";
+import { REFRESH_COOKIE } from "@/lib/session";
 
 const tokenSchema = z
   .string()
@@ -23,17 +23,18 @@ export async function GET(request: NextRequest) {
   ) {
     return NextResponse.redirect(new URL("/login?oauth_error=1", publicOrigin));
   }
-  const response = NextResponse.redirect(new URL("/play", publicOrigin));
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
   };
-  response.cookies.set(ACCESS_COOKIE, access, {
-    ...options,
-    maxAge: 7 * 86400,
-  });
+  const response = NextResponse.redirect(
+    new URL(
+      `/auth/complete?access_token=${encodeURIComponent(access)}`,
+      publicOrigin,
+    ),
+  );
   response.cookies.set(REFRESH_COOKIE, refresh, {
     ...options,
     maxAge: 7 * 86400,

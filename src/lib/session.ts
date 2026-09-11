@@ -20,7 +20,7 @@ export function upstreamCookie(token: string) {
     throw new ApiError(401, "Your session has expired. Please sign in again.");
   return `${name}=${token}`;
 }
-export async function saveSession(response: AxiosResponse) {
+export async function saveSession(response: AxiosResponse): Promise<string> {
   const { access_token } = z
     .object({ access_token: z.string().min(1) })
     .parse(response.data);
@@ -34,8 +34,12 @@ export async function saveSession(response: AxiosResponse) {
       "The sign-in service returned an incomplete session. Please try again.",
     );
   const jar = await cookies();
+  // Server-rendered protected routes need a server-readable access token.
+  // The client also stores this token in localStorage after login; the refresh
+  // token remains the long-lived HttpOnly cookie.
   jar.set(ACCESS_COOKIE, access_token, { ...cookieOptions, maxAge: 7 * 86400 });
   jar.set(REFRESH_COOKIE, refresh, { ...cookieOptions, maxAge: 7 * 86400 });
+  return access_token;
 }
 export async function clearSession() {
   const jar = await cookies();
@@ -47,8 +51,11 @@ export const currentUser = cache(async () => {
   if (!token) return null;
   try {
     return userSchema.parse(
-      (await api("/me", { headers: { Authorization: `Bearer ${token}` } }))
-        .data,
+      (
+        await api("/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ).data,
     );
   } catch (error) {
     if (error instanceof ApiError && [401, 403].includes(error.status))

@@ -3,6 +3,7 @@ import "@fontsource/dm-sans/latin-400.css";
 import "@fontsource/dm-sans/latin-500.css";
 import "@fontsource/dm-sans/latin-600.css";
 import "./globals.css";
+import { ToastProvider } from "@/components/toast";
 export const metadata: Metadata = {
   title: { default: "Still — A little space to play", template: "%s · Still" },
   description:
@@ -18,7 +19,7 @@ export default function RootLayout({
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

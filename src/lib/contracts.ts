@@ -17,6 +17,7 @@ export type User = z.infer<typeof userSchema>;
 export type FormState = {
   error?: string;
   success?: string;
+  accessToken?: string;
   fields?: Record<string, string[]>;
 };
 export const loginSchema = z.object({

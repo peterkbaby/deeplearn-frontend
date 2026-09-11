@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import {
   clearSession,
-  currentUser,
   REFRESH_COOKIE,
   saveSession,
   upstreamCookie,
@@ -19,17 +18,16 @@ export async function POST(request: NextRequest) {
       { status: 403 },
     );
   try {
-    if (await currentUser()) return NextResponse.json({ ok: true });
     const refresh = (await cookies()).get(REFRESH_COOKIE)?.value;
     if (!refresh) throw new ApiError(401, "Session expired.");
-    await saveSession(
+    const accessToken = await saveSession(
       await api("/refresh", {
         method: "POST",
         headers: { Cookie: upstreamCookie(refresh) },
       }),
     );
     return NextResponse.json(
-      { ok: true },
+      { ok: true, access_token: accessToken },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
