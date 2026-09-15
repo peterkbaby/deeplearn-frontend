@@ -1,16 +1,21 @@
-import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/session";
-import { OnboardingForm } from "@/components/forms";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
-export const metadata = { title: "Make it yours" };
-export default async function Onboarding() {
-  const user = await requireUser("/onboarding");
-  if (user.onboarding) redirect("/play");
+import { OnboardingForm } from "@/components/forms";
+import { useAppSelector } from "@/store/hooks";
+
+export default function Onboarding() {
+  const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
+  useEffect(() => {
+    if (user?.onboarding) router.replace("/play");
+  }, [router, user]);
+  if (!user || user.onboarding) return null;
   return (
     <section className="onboarding-card">
-      <div className="welcome-icon">
-        <Sparkles size={26} />
-      </div>
+      <div className="welcome-icon"><Sparkles size={26} /></div>
       <span className="eyebrow">ONE LAST LITTLE THING</span>
       <h1>Make it yours, {user.name.split(" ")[0]}.</h1>
       <p>Pick a name for your corner of Still.</p>

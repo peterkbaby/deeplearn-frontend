@@ -4,8 +4,10 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Chrome, Eye, EyeOff, LoaderCircle } from "lucide-react";
-import { setAccessToken } from "@/store/auth-slice";
+import { setSession } from "@/store/auth-slice";
 import { useAppDispatch } from "@/store/hooks";
+import { clientApi, ClientApiError } from "@/lib/client-api";
+import { userSchema } from "@/lib/contracts";
 
 type AuthMode = "login" | "register";
 
@@ -31,25 +33,32 @@ export function AuthForm({
     const payload = Object.fromEntries(form);
 
     try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "We couldn’t complete that request.");
-        return;
-      }
-      if (isLogin && typeof data.access_token === "string") {
-        localStorage.setItem("still_access", data.access_token);
-        dispatch(setAccessToken(data.access_token));
+      if (isLogin) {
+        const response = await clientApi.post("/login", payload);
+        const token = response.data.access_token;
+        if (typeof token !== "string")
+          throw new Error(
+            "The sign-in service returned an incomplete session.",
+          );
+        localStorage.setItem("still_access", token);
+        const profile = await clientApi.get("/me");
+        dispatch(
+          setSession({
+            accessToken: token,
+            user: userSchema.parse(profile.data),
+          }),
+        );
         router.replace(next);
         return;
       }
+      await clientApi.post("/register", payload);
       router.replace("/login?registered=1");
-    } catch {
-      setError("We couldn’t reach the sign-in service. Please try again.");
+    } catch (error) {
+      setError(
+        error instanceof ClientApiError || error instanceof Error
+          ? error.message
+          : "We couldn’t complete that request. Please try again.",
+      );
     } finally {
       setPending(false);
     }
@@ -63,7 +72,7 @@ export function AuthForm({
         </p>
       )}
       <fieldset disabled={pending}>
-        <a className="button google-button full" href="/api/auth/google">
+        <a className="button google-button full" href="/auth/google">
           <Chrome size={17} /> Continue with Google
         </a>
         <div className="form-divider">

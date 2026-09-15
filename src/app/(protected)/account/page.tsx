@@ -1,27 +1,12 @@
-import { ApiError } from "@/lib/api";
-import { profilePicSchema } from "@/lib/contracts";
-import { authorizedApi, requireUser } from "@/lib/session";
-import { ProfilePhotoManager } from "@/components/profile-photo-manager";
+"use client";
+
 import { ShieldCheck } from "lucide-react";
-export const metadata = { title: "Your account" };
-export default async function Account() {
-  const user = await requireUser("/account");
-  let photo: string | null = null;
-  // Always request the dedicated endpoint when Account renders. It is the
-  // source of truth and can return a fresh signed URL for the current image.
-  try {
-    const response = await authorizedApi("/profile/pic");
-    const profile = profilePicSchema.parse(response.data);
-    if (
-      profile.profile_pic_url.startsWith("http://") ||
-      profile.profile_pic_url.startsWith("https://")
-    ) {
-      photo = profile.profile_pic_url;
-    }
-  } catch (error) {
-    // 404 means the user has no photo yet; retain the initials fallback.
-    if (!(error instanceof ApiError && error.status === 404)) throw error;
-  }
+import { ProfilePhotoManager } from "@/components/profile-photo-manager";
+import { useAppSelector } from "@/store/hooks";
+
+export default function Account() {
+  const user = useAppSelector((state) => state.auth.user);
+  if (!user) return null;
   return (
     <div className="account-page">
       <span className="eyebrow">YOUR CORNER OF STILL</span>
@@ -29,7 +14,7 @@ export default async function Account() {
       <p className="page-subtitle">A few details that make this space yours.</p>
       <section className="profile-card">
         <div className="profile-summary">
-          <ProfilePhotoManager photo={photo} name={user.name} compact />
+          <ProfilePhotoManager />
           <div>
             <h2>{user.name}</h2>
             <p>{user.username ? `@${user.username}` : "Still member"}</p>

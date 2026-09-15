@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cropper, { type Area } from "react-easy-crop";
 import { Eye, LoaderCircle, Trash2, Upload, X } from "lucide-react";
 import { useToast } from "@/components/toast";
+import { clientApi } from "@/lib/client-api";
+import { useAppSelector } from "@/store/hooks";
 
 async function cropImage(source: string, crop: Area): Promise<Blob> {
   const image = new Image();
@@ -39,16 +41,11 @@ async function cropImage(source: string, crop: Area): Promise<Blob> {
   });
 }
 
-export function ProfilePhotoManager({
-  photo,
-  name,
-  compact = false,
-}: {
-  photo: string | null;
-  name: string;
-  compact?: boolean;
-}) {
+export function ProfilePhotoManager() {
   const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
+  const name = user?.name || "Your";
+  const [photo, setPhoto] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -58,6 +55,18 @@ export function ProfilePhotoManager({
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    async function loadPhoto() {
+      try {
+        const response = await clientApi.get("/profile/pic");
+        setPhoto(response.data.profile_pic_url);
+      } catch {
+        setPhoto(null);
+      }
+    }
+    void loadPhoto();
+  }, []);
 
   function chooseFile(file: File | undefined) {
     if (!file) return;
@@ -91,13 +100,8 @@ export function ProfilePhotoManager({
         "file",
         new File([blob], "profile-photo.jpg", { type: "image/jpeg" }),
       );
-      const response = await fetch("/api/user/profile/photo", {
-        method: "POST",
-        body: form,
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || "We couldn’t update your photo.");
+      const response = await clientApi.post("/profile/upload-pic", form);
+      setPhoto(response.data.profile_pic_url || null);
       closeCropper();
       showToast("Your profile photo has been updated.");
       router.refresh();
@@ -114,12 +118,8 @@ export function ProfilePhotoManager({
   async function removePhoto() {
     setDeleting(true);
     try {
-      const response = await fetch("/api/user/profile/photo", {
-        method: "DELETE",
-      });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || "We couldn’t delete your photo.");
+      await clientApi.delete("/profile/pic");
+      setPhoto(null);
       setViewer(false);
       showToast("Your profile photo has been deleted.");
       router.refresh();
@@ -135,7 +135,7 @@ export function ProfilePhotoManager({
   }
   const initials = name.slice(0, 1).toUpperCase();
   return (
-    <div className={`photo-manager${compact ? " compact" : ""}`}>
+    <div className="photo-manager compact">
       <div className="photo-avatar-wrap">
         <div className="photo-avatar">
           {photo ? <img src={photo} alt={`${name}’s profile`} /> : initials}
@@ -161,16 +161,6 @@ export function ProfilePhotoManager({
           </button>
         )}
       </div>
-      {!compact && (
-        <div>
-          <strong>{photo ? "Profile photo" : "Add a profile photo"}</strong>
-          <p>
-            {photo
-              ? "Use the eye to view or the upload icon to replace it."
-              : "Upload a square photo to make your account yours."}
-          </p>
-        </div>
-      )}
       <input
         ref={input}
         className="photo-input-hidden"

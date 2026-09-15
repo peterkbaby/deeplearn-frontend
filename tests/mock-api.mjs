@@ -25,7 +25,7 @@ const server = http.createServer(async (req, res) => {
       200,
       { access_token: access, token_type: "bearer" },
       {
-        "Set-Cookie": `refresh_token=${refresh}; Path=/user-service; HttpOnly; Secure; SameSite=Lax`,
+        "Set-Cookie": `refresh_token=${refresh}; Path=/; HttpOnly; SameSite=Lax`,
       },
     );
   };
@@ -46,7 +46,7 @@ const server = http.createServer(async (req, res) => {
       created_at: new Date().toISOString(),
     };
     users.set(user.email, user);
-    return send(200, user);
+    return send(201, user);
   }
   if (path === "/user-service/login") {
     if (body.email === "limited@example.com")
@@ -64,7 +64,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (path === "/user-service/logout") {
     refreshTokens.delete(refresh);
-    return send(200, { detail: "Logged out successfully" });
+    return send(
+      200,
+      { detail: "Logged out successfully" },
+      {
+        "Set-Cookie":
+          "refresh_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax",
+      },
+    );
   }
   const user = accessTokens.get(
     req.headers.authorization?.replace("Bearer ", ""),

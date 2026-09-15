@@ -1,10 +1,17 @@
-import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/session";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MemoryGame } from "@/components/memory-game";
-export const metadata = { title: "A moment to play" };
-export default async function Play() {
-  const user = await requireUser("/play");
-  if (!user.onboarding) redirect("/onboarding");
+import { useAppSelector } from "@/store/hooks";
+
+export default function Play() {
+  const router = useRouter();
+  const user = useAppSelector((state) => state.auth.user);
+  useEffect(() => {
+    if (user && !user.onboarding) router.replace("/onboarding");
+  }, [router, user]);
+  if (!user || !user.onboarding) return null;
   return (
     <>
       <div className="play-heading">

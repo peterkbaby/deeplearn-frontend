@@ -3,8 +3,9 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, LoaderCircle, LogOut } from "lucide-react";
-import { clearAuth } from "@/store/auth-slice";
-import { useAppDispatch } from "@/store/hooks";
+import { clearAuth, setUser } from "@/store/auth-slice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { clientApi, ClientApiError } from "@/lib/client-api";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -16,13 +17,17 @@ export function LogoutButton() {
     setPending(true);
     setError("");
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await clientApi.post("/logout");
       localStorage.removeItem("still_access");
       dispatch(clearAuth());
       router.replace("/login?loggedOut=1");
       router.refresh();
-    } catch {
-      setError("We couldn’t sign you out. Please try again.");
+    } catch (error) {
+      setError(
+        error instanceof ClientApiError
+          ? error.message
+          : "We couldn’t sign you out. Please try again.",
+      );
     } finally {
       setPending(false);
     }
@@ -55,6 +60,8 @@ export function LogoutButton() {
 
 export function OnboardingForm() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
   const [username, setUsername] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -64,20 +71,16 @@ export function OnboardingForm() {
     setPending(true);
     setError("");
     try {
-      const response = await fetch("/api/user/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "We couldn’t save that name.");
-        return;
-      }
+      await clientApi.post("/onboarding", { username });
+      if (user) dispatch(setUser({ ...user, username, onboarding: true }));
       router.replace("/play");
       router.refresh();
-    } catch {
-      setError("We couldn’t save that name. Please try again.");
+    } catch (error) {
+      setError(
+        error instanceof ClientApiError
+          ? error.message
+          : "We couldn’t save that name. Please try again.",
+      );
     } finally {
       setPending(false);
     }
