@@ -9,11 +9,21 @@ import {
 } from "@/lib/session";
 export async function POST(request: NextRequest) {
   // This endpoint changes cookies, so only same-origin browser requests may call it.
-  const expectedOrigin = (
-    process.env.APP_ORIGIN ||
-    `${request.nextUrl.protocol}//${request.headers.get("host")}`
-  ).replace(/\/$/, "");
-  if (request.headers.get("origin") !== expectedOrigin)
+  const incomingOrigin = request.headers.get("origin");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  const forwardedHost =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const allowedOrigins = new Set(
+    [
+      process.env.APP_ORIGIN,
+      forwardedHost
+        ? `${forwardedProto.split(",")[0].trim()}://${forwardedHost}`
+        : undefined,
+    ]
+      .filter((origin): origin is string => Boolean(origin))
+      .map((origin) => origin.replace(/\/$/, "")),
+  );
+  if (!incomingOrigin || !allowedOrigins.has(incomingOrigin.replace(/\/$/, "")))
     return NextResponse.json(
       { error: "Request not allowed." },
       { status: 403 },
