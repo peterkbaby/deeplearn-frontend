@@ -1,15 +1,9 @@
 "use client";
 
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Cropper, { type Area } from "react-easy-crop";
 import { Eye, LoaderCircle, Trash2, Upload, X } from "lucide-react";
-import { deletePhotoAction, uploadAction } from "@/lib/actions";
 import { useToast } from "@/components/toast";
 
 async function cropImage(source: string, crop: Area): Promise<Blob> {
@@ -54,18 +48,15 @@ export function ProfilePhotoManager({
   name: string;
   compact?: boolean;
 }) {
+  const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<Area | null>(null);
   const [viewer, setViewer] = useState(false);
-  const [uploadState, upload, uploadPending] = useActionState(uploadAction, {});
-  const [deleteState, deletePhoto, deletePending] = useActionState(
-    deletePhotoAction,
-    {},
-  );
-  const [busy, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { showToast } = useToast();
 
   function chooseFile(file: File | undefined) {
@@ -90,28 +81,59 @@ export function ProfilePhotoManager({
     setSelected(null);
     if (input.current) input.current.value = "";
   }
-  function saveCrop() {
+  async function saveCrop() {
     if (!selected || !area) return;
-    startTransition(async () => {
-      try {
-        const blob = await cropImage(selected, area);
-        const form = new FormData();
-        form.set(
-          "file",
-          new File([blob], "profile-photo.jpg", { type: "image/jpeg" }),
-        );
-        await upload(form);
-        closeCropper();
-      } catch {
-        // The server action displays API errors; this handles local canvas failures.
-      }
-    });
+    setUploading(true);
+    try {
+      const blob = await cropImage(selected, area);
+      const form = new FormData();
+      form.set(
+        "file",
+        new File([blob], "profile-photo.jpg", { type: "image/jpeg" }),
+      );
+      const response = await fetch("/api/user/profile/photo", {
+        method: "POST",
+        body: form,
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "We couldn’t update your photo.");
+      closeCropper();
+      showToast("Your profile photo has been updated.");
+      router.refresh();
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "We couldn’t update your photo.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+  async function removePhoto() {
+    setDeleting(true);
+    try {
+      const response = await fetch("/api/user/profile/photo", {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "We couldn’t delete your photo.");
+      setViewer(false);
+      showToast("Your profile photo has been deleted.");
+      router.refresh();
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "We couldn’t delete your photo.",
+      );
+    } finally {
+      setDeleting(false);
+    }
   }
   const initials = name.slice(0, 1).toUpperCase();
-  useEffect(() => {
-    const error = uploadState.error || deleteState.error;
-    if (error) showToast(error);
-  }, [uploadState.error, deleteState.error, showToast]);
   return (
     <div className={`photo-manager${compact ? " compact" : ""}`}>
       <div className="photo-avatar-wrap">
@@ -156,17 +178,7 @@ export function ProfilePhotoManager({
         accept="image/jpeg,image/png,image/webp"
         onChange={(event) => chooseFile(event.target.files?.[0])}
       />
-      {uploadState.error && (
-        <p className="field-error" role="alert">
-          {uploadState.error}
-        </p>
-      )}
-      {deleteState.error && (
-        <p className="field-error" role="alert">
-          {deleteState.error}
-        </p>
-      )}
-      {(selected || uploadPending || busy) && selected && (
+      {selected && (
         <div
           className="photo-modal"
           role="dialog"
@@ -226,9 +238,9 @@ export function ProfilePhotoManager({
                 className="button primary"
                 type="button"
                 onClick={saveCrop}
-                disabled={!area || busy}
+                disabled={!area || uploading}
               >
-                {busy ? (
+                {uploading ? (
                   <LoaderCircle size={16} className="spin" />
                 ) : (
                   "Use this photo"
@@ -261,20 +273,19 @@ export function ProfilePhotoManager({
               </button>
             </div>
             <img className="photo-full" src={photo} alt={`${name}’s profile`} />
-            <form action={deletePhoto} onSubmit={() => setViewer(false)}>
-              <button
-                className="delete-button"
-                type="submit"
-                disabled={deletePending}
-              >
-                {deletePending ? (
-                  <LoaderCircle size={15} className="spin" />
-                ) : (
-                  <Trash2 size={15} />
-                )}{" "}
-                Delete photo
-              </button>
-            </form>
+            <button
+              className="delete-button"
+              type="button"
+              onClick={removePhoto}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <LoaderCircle size={15} className="spin" />
+              ) : (
+                <Trash2 size={15} />
+              )}{" "}
+              Delete photo
+            </button>
           </div>
         </div>
       )}

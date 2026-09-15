@@ -3,9 +3,12 @@
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
+import { setAccessToken } from "@/store/auth-slice";
+import { useAppDispatch } from "@/store/hooks";
 
 export function AuthCompleteClient() {
   const params = useSearchParams();
+  const dispatch = useAppDispatch();
   useEffect(() => {
     const token = params.get("access_token");
     if (!token) {
@@ -13,9 +16,10 @@ export function AuthCompleteClient() {
       return;
     }
     localStorage.setItem("still_access", token);
+    dispatch(setAccessToken(token));
     window.history.replaceState({}, "", "/auth/complete");
     window.location.replace("/play");
-  }, [params]);
+  }, [dispatch, params]);
   return (
     <main id="main" className="center-page">
       <div className="center-card">

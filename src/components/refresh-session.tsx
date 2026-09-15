@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
+import { setAccessToken } from "@/store/auth-slice";
+import { useAppDispatch } from "@/store/hooks";
 export function RefreshSession({ next }: { next: string }) {
+  const dispatch = useAppDispatch();
   const [error, setError] = useState("");
   const started = useRef(false);
   async function refresh() {
@@ -23,8 +26,10 @@ export function RefreshSession({ next }: { next: string }) {
           setError(data.error || "We couldn’t reconnect. Try again.");
           return;
         }
-        if (typeof data.access_token === "string")
+        if (typeof data.access_token === "string") {
           localStorage.setItem("still_access", data.access_token);
+          dispatch(setAccessToken(data.access_token));
+        }
         window.location.replace(next);
       } catch {
         setError("We couldn’t reconnect. Check your connection and try again.");

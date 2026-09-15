@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LockKeyhole } from "lucide-react";
-import { AuthForm } from "@/components/forms";
+import { AuthForm } from "@/components/auth-form";
 import { safeDestination } from "@/lib/contracts";
 export const metadata: Metadata = { title: "Welcome back" };
 export default async function Login({

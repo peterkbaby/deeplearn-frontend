@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LockKeyhole } from "lucide-react";
-import { AuthForm } from "@/components/forms";
+import { AuthForm } from "@/components/auth-form";
 export const metadata: Metadata = { title: "Create your account" };
 export default function Register() {
   return (
