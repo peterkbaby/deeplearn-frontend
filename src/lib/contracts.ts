@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDocmindDestination } from "@/lib/docmind-contracts";
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -36,7 +37,8 @@ export const registerSchema = loginSchema.extend({
 });
 export function safeDestination(value: unknown): string {
   return typeof value === "string" &&
-    ["/play", "/account", "/onboarding"].includes(value)
+    (["/play", "/account", "/onboarding"].includes(value) ||
+      isDocmindDestination(value))
     ? value
     : "/play";
 }

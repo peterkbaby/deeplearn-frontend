@@ -36,6 +36,8 @@ crop position, and modal visibility.
 | `/login`, `/register` | Public authentication               |
 | `/auth/complete`      | Google OAuth browser handoff        |
 | `/play`               | Protected memory game               |
+| `/docmind`            | Protected PDF upload and library    |
+| `/docmind/[id]`       | Document summary and session chat   |
 | `/onboarding`         | Protected username setup            |
 | `/account`            | Protected account and profile photo |
 
@@ -54,9 +56,17 @@ cp .env.example .env.local
 npm run dev
 ```
 
-`AUTH_API_URL` is only used by the local Next.js rewrite. It lets the browser
-keep using same-origin `/user-service` and `/auth/google` paths without
-running Nginx locally.
+`AUTH_API_URL` and `DOCMIND_API_URL` are only used by local Next.js rewrites.
+They let the browser keep using same-origin `/user-service`, `/auth/google`,
+and `/doc-service` paths without running Nginx locally. `DOCMIND_API_URL`
+defaults to `http://127.0.0.1:8000`; `/doc-service` is stripped before the
+request reaches DocMind.
+
+DocMind supports PDF upload, document listing, summaries, deletion, and
+session-only document Q&A. The current backend does not expose PDF bytes or a
+signed download URL, so the workspace reserves its preview area until secure
+document delivery is available. It also does not expose conversation APIs, so
+chat messages are not retained after leaving or reloading the page.
 
 For local Google OAuth, FastAPI must use:
 
@@ -74,6 +84,7 @@ Nginx owns the public routing:
 location /user-service/ { proxy_pass http://127.0.0.1:8000; }
 location = /auth/google { proxy_pass http://127.0.0.1:8000; }
 location = /auth/google/callback { proxy_pass http://127.0.0.1:8000; }
+location /doc-service/ { proxy_pass http://127.0.0.1:8000/; }
 location / { proxy_pass http://127.0.0.1:3000; }
 ```
 

@@ -15,7 +15,9 @@ export default function Onboarding() {
   if (!user || user.onboarding) return null;
   return (
     <section className="onboarding-card">
-      <div className="welcome-icon"><Sparkles size={26} /></div>
+      <div className="welcome-icon">
+        <Sparkles size={26} />
+      </div>
       <span className="eyebrow">ONE LAST LITTLE THING</span>
       <h1>Make it yours, {user.name.split(" ")[0]}.</h1>
       <p>Pick a name for your corner of Still.</p>

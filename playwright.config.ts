@@ -24,6 +24,7 @@ export default defineConfig({
       reuseExistingServer: false,
       env: {
         AUTH_API_URL: "http://127.0.0.1:8100",
+        DOCMIND_API_URL: "http://127.0.0.1:8100",
         AUTH_REFRESH_COOKIE_NAME: "refresh_token",
         APP_ORIGIN: "http://localhost:3100",
       },

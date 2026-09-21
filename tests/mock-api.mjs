@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 const users = new Map();
 const accessTokens = new Map();
 const refreshTokens = new Map();
+const documents = new Map();
 const server = http.createServer(async (req, res) => {
   let raw = "";
   for await (const chunk of req) raw += chunk;
@@ -91,6 +92,64 @@ const server = http.createServer(async (req, res) => {
     return send(200, {
       detail: "Profile picture uploaded successfully",
       profile_pic_url: null,
+    });
+  if (path === "/docmind/documents" && req.method === "GET")
+    return send(200, {
+      documents: [...documents.values()].filter(
+        (document) => document.owner_id === user.id,
+      ),
+      total: documents.size,
+    });
+  if (path === "/docmind/documents/upload" && req.method === "POST") {
+    const document = {
+      id: randomUUID(),
+      owner_id: user.id,
+      filename: "sample.pdf",
+      title: "sample.pdf",
+      storage_key: `pdfs/${user.id}/sample.pdf`,
+      page_count: 4,
+      status: "ready",
+      created_at: new Date().toISOString(),
+    };
+    documents.set(document.id, document);
+    return send(200, {
+      data: document,
+      summary: {
+        document_id: document.id,
+        summary: "**Main idea**\n\n- First point\n- Second point",
+        source_pages: [1, 2],
+      },
+    });
+  }
+  const documentMatch = path?.match(/^\/docmind\/documents\/([^/]+)$/);
+  if (documentMatch) {
+    const document = documents.get(documentMatch[1]);
+    if (!document || document.owner_id !== user.id)
+      return send(404, { detail: "Document not found" });
+    if (req.method === "DELETE") {
+      documents.delete(document.id);
+      return send(200, { detail: "Document deleted" });
+    }
+    return send(200, document);
+  }
+  const summaryMatch = path?.match(
+    /^\/summaries\/documents\/([^/]+)\/summary$/,
+  );
+  if (summaryMatch && req.method === "POST") {
+    const document = documents.get(summaryMatch[1]);
+    if (!document || document.owner_id !== user.id)
+      return send(404, { detail: "Document not found" });
+    return send(200, {
+      document_id: document.id,
+      summary: "**Main idea**\n\n- First point\n- Second point",
+      source_pages: [1, 2],
+    });
+  }
+  if (path === "/docmind/chat" && req.method === "POST")
+    return send(200, {
+      answer: `The document answers: ${body.question}`,
+      source_pages: [2],
+      chunks_used: 3,
     });
   send(404, { detail: "Not found" });
 });

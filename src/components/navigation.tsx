@@ -15,6 +15,14 @@ export function Navigation() {
       </Link>
       <Link
         prefetch={false}
+        href="/docmind"
+        className={path.startsWith("/docmind") ? "active" : ""}
+        aria-current={path.startsWith("/docmind") ? "page" : undefined}
+      >
+        DocMind
+      </Link>
+      <Link
+        prefetch={false}
         href="/account"
         className={path === "/account" ? "active" : ""}
         aria-current={path === "/account" ? "page" : undefined}

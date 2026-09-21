@@ -3,13 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, LoaderCircle, LogOut } from "lucide-react";
-import { clearAuth, setUser } from "@/store/auth-slice";
+import { setUser } from "@/store/auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 
 export function LogoutButton() {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,9 +17,7 @@ export function LogoutButton() {
     try {
       await clientApi.post("/logout");
       localStorage.removeItem("still_access");
-      dispatch(clearAuth());
-      router.replace("/login?loggedOut=1");
-      router.refresh();
+      window.location.replace("/login?loggedOut=1");
     } catch (error) {
       setError(
         error instanceof ClientApiError

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const authApiUrl = process.env.AUTH_API_URL ?? "http://127.0.0.1:8000";
+const docmindApiUrl = process.env.DOCMIND_API_URL ?? "http://127.0.0.1:8000";
 
 const config: NextConfig = {
   poweredByHeader: false,
@@ -16,6 +17,10 @@ const config: NextConfig = {
       {
         source: "/user-service/:path*",
         destination: `${authApiUrl}/user-service/:path*`,
+      },
+      {
+        source: "/doc-service/:path*",
+        destination: `${docmindApiUrl}/:path*`,
       },
       { source: "/auth/google", destination: `${authApiUrl}/auth/google` },
     ];

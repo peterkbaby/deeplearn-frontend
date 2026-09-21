@@ -12,6 +12,7 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const status = useAppSelector((state) => state.auth.status);
+  const isDocmind = pathname.startsWith("/docmind");
 
   useEffect(() => {
     if (status === "anonymous")
@@ -29,9 +30,14 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
     );
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isDocmind ? "docmind-shell" : ""}`}>
       <header className="app-header">
-        <Brand />
+        <div className="app-brand-group">
+          <Brand />
+          {isDocmind && (
+            <span className="docmind-product-label">Intelligence</span>
+          )}
+        </div>
         <Navigation />
         <LogoutButton />
       </header>
@@ -39,8 +45,12 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <footer className="app-footer">
-        <span>A little less noise. A little more you.</span>
-        <span>STILL / TAKE YOUR TIME</span>
+        <span>
+          {isDocmind
+            ? "Private document intelligence, shaped around your questions."
+            : "A little less noise. A little more you."}
+        </span>
+        <span>{isDocmind ? "DOCMIND / STILL" : "STILL / TAKE YOUR TIME"}</span>
       </footer>
     </div>
   );

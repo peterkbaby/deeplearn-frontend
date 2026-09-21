@@ -24,4 +24,3 @@ jobs:
             npm run build
             sudo systemctl restart frontend
             sudo systemctl status frontend --no-pager
-

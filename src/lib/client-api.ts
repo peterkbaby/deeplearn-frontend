@@ -17,6 +17,12 @@ export const clientApi = axios.create({
   timeout: 12_000,
 });
 
+export const docmindApi = axios.create({
+  baseURL: "/doc-service",
+  withCredentials: true,
+  timeout: 120_000,
+});
+
 type RetriableRequest = InternalAxiosRequestConfig & { _retried?: boolean };
 
 let refreshInFlight: Promise<string> | null = null;
@@ -56,42 +62,45 @@ function isSessionEndpoint(url?: string) {
   );
 }
 
-clientApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem("still_access");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (!(config.data instanceof FormData))
-    config.headers["Content-Type"] ??= "application/json";
-  return config;
-});
+function addInterceptors(api: typeof clientApi, unavailableMessage: string) {
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("still_access");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (!(config.data instanceof FormData))
+      config.headers["Content-Type"] ??= "application/json";
+    return config;
+  });
 
-clientApi.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError<{ detail?: string }>) => {
-    const request = error.config as RetriableRequest | undefined;
-    if (
-      error.response?.status === 401 &&
-      request &&
-      !request._retried &&
-      !isSessionEndpoint(request.url)
-    ) {
-      request._retried = true;
-      try {
-        const token = await refreshAccessToken();
-        request.headers.Authorization = `Bearer ${token}`;
-        return clientApi(request);
-      } catch {
-        localStorage.removeItem("still_access");
-        emit("still:session-expired");
+  api.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError<{ detail?: string }>) => {
+      const request = error.config as RetriableRequest | undefined;
+      if (
+        error.response?.status === 401 &&
+        request &&
+        !request._retried &&
+        !isSessionEndpoint(request.url)
+      ) {
+        request._retried = true;
+        try {
+          const token = await refreshAccessToken();
+          request.headers.Authorization = `Bearer ${token}`;
+          return api(request);
+        } catch {
+          localStorage.removeItem("still_access");
+          emit("still:session-expired");
+        }
       }
-    }
-    if (!error.response)
-      return Promise.reject(
-        new ClientApiError(503, "We couldn’t reach the sign-in service."),
-      );
-    const message =
-      typeof error.response.data?.detail === "string"
-        ? error.response.data.detail
-        : "We couldn’t complete that request. Please try again.";
-    return Promise.reject(new ClientApiError(error.response.status, message));
-  },
-);
+      if (!error.response)
+        return Promise.reject(new ClientApiError(503, unavailableMessage));
+      const message =
+        typeof error.response.data?.detail === "string"
+          ? error.response.data.detail
+          : "We couldn’t complete that request. Please try again.";
+      return Promise.reject(new ClientApiError(error.response.status, message));
+    },
+  );
+}
+
+addInterceptors(clientApi, "We couldn’t reach the sign-in service.");
+addInterceptors(docmindApi, "We couldn’t reach the document service.");
