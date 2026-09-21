@@ -19,8 +19,7 @@ function messageFor(error: unknown) {
     return "We couldn’t load your documents.";
   if (error.status === 413)
     return "The upload was rejected by the server before DocMind could read it. The proxy upload limit must be at least 50 MB.";
-  if (error.status === 422)
-    return "We couldn’t process that PDF. Try a different file.";
+  if (error.status === 422) return error.message;
   if (error.status === 429)
     return "You’ve reached the document limit. Please wait and try again.";
   return error.message;
