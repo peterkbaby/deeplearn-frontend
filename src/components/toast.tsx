@@ -47,11 +47,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 4200);
+    const timer = setTimeout(onClose, toast.tone === "error" ? 7000 : 4200);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [onClose, toast.tone]);
   return (
-    <div className={`global-toast ${toast.tone}`} role="status">
+    <div
+      className={`global-toast ${toast.tone}`}
+      role={toast.tone === "error" ? "alert" : "status"}
+    >
       <span>{toast.message}</span>
       <button type="button" onClick={onClose} aria-label="Dismiss notification">
         <X size={15} />

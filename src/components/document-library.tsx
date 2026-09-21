@@ -115,6 +115,8 @@ export function DocumentLibrary({
     setError("");
     const form = new FormData();
     form.append("file", file);
+    let completionToast: { message: string; tone: "error" | "success" } | null =
+      null;
     try {
       const response = await docmindApi.post("/docmind/documents/upload", form);
       const result = documentUploadSchema.parse(response.data);
@@ -131,16 +133,21 @@ export function DocumentLibrary({
         ...current.filter((document) => document.id !== result.data.id),
       ]);
       onCountChange?.(documents.length + (alreadyListed ? 0 : 1));
-      showToast("Document is ready to explore.", "success");
+      completionToast = {
+        message: "Document is ready to explore.",
+        tone: "success",
+      };
       if (inputRef.current) inputRef.current.value = "";
     } catch (uploadError) {
       const message = messageFor(uploadError);
       setError(message);
-      showToast(message);
+      completionToast = { message, tone: "error" };
     } finally {
       setUploading(false);
       setProcessingFilename("");
     }
+    if (completionToast)
+      showToast(completionToast.message, completionToast.tone);
   }
 
   return (
