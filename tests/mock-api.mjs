@@ -121,6 +121,17 @@ const server = http.createServer(async (req, res) => {
       },
     });
   }
+  const contentMatch = path?.match(/^\/docmind\/documents\/([^/]+)\/content$/);
+  if (contentMatch && req.method === "GET") {
+    const document = documents.get(contentMatch[1]);
+    if (!document || document.owner_id !== user.id)
+      return send(404, { detail: "Document not found" });
+    res.writeHead(200, {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": 'inline; filename="sample.pdf"',
+    });
+    return res.end(Buffer.from("%PDF-1.4 sample preview"));
+  }
   const documentMatch = path?.match(/^\/docmind\/documents\/([^/]+)$/);
   if (documentMatch) {
     const document = documents.get(documentMatch[1]);

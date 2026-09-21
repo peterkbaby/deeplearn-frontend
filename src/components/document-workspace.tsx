@@ -8,7 +8,9 @@ import {
   ArrowLeft,
   FileText,
   LoaderCircle,
+  Maximize2,
   MessageSquare,
+  RotateCcw,
   Send,
   Trash2,
 } from "lucide-react";
@@ -24,6 +26,12 @@ import {
   documentSchema,
   summarySchema,
 } from "@/lib/docmind-contracts";
+
+const suggestedQuestions = [
+  "What is the main idea?",
+  "Summarize the key arguments.",
+  "What should I remember?",
+];
 
 type Message = {
   id: string;
@@ -75,6 +83,9 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
   const [document, setDocument] = useState<DocmindDocument | null>(null);
   const [documents, setDocuments] = useState<DocmindDocument[]>([]);
   const [summary, setSummary] = useState<DocumentSummary | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState("");
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -105,6 +116,35 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
       setSummaryLoading(false);
     }
   }, [documentId, showToast]);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = "";
+    docmindApi
+      .get(`/docmind/documents/${documentId}/content`, {
+        responseType: "blob",
+      })
+      .then((response) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(
+          new Blob([response.data], { type: "application/pdf" }),
+        );
+        setPreviewUrl(objectUrl);
+      })
+      .catch((previewLoadError) => {
+        if (!active) return;
+        setPreviewError(
+          errorMessage(previewLoadError, "PDF preview is unavailable."),
+        );
+      })
+      .finally(() => {
+        if (active) setPreviewLoading(false);
+      });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [documentId]);
 
   useEffect(() => {
     let active = true;
@@ -166,9 +206,8 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
     }
   }
 
-  async function askQuestion(event: FormEvent) {
-    event.preventDefault();
-    const content = question.trim();
+  async function sendQuestion(value: string) {
+    const content = value.trim();
     if (!content || !document || chatting || document.status !== "ready")
       return;
     const userMessage: Message = {
@@ -206,6 +245,11 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
     } finally {
       setChatting(false);
     }
+  }
+
+  function askQuestion(event: FormEvent) {
+    event.preventDefault();
+    void sendQuestion(question);
   }
 
   if (loading)
@@ -283,16 +327,42 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
           </div>
 
           <section
-            className="preview-placeholder"
+            className="document-preview"
             aria-labelledby="preview-heading"
           >
-            <FileText size={28} />
-            <div>
-              <h2 id="preview-heading">Document preview</h2>
-              <p>
-                PDF preview will appear here when secure document delivery is
-                available.
-              </p>
+            <div className="preview-toolbar">
+              <div>
+                <span className="preview-live-dot" aria-hidden="true" />
+                <h2 id="preview-heading">Document preview</h2>
+              </div>
+              {previewUrl && (
+                <a
+                  className="preview-expand"
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Open PDF in a new tab"
+                >
+                  <Maximize2 size={14} /> Open
+                </a>
+              )}
+            </div>
+            <div className="preview-canvas">
+              {previewLoading ? (
+                <div className="preview-state" role="status">
+                  <LoaderCircle className="spin" size={20} /> Loading PDF…
+                </div>
+              ) : previewUrl ? (
+                <iframe
+                  src={previewUrl}
+                  title={`Preview of ${document.title}`}
+                />
+              ) : (
+                <div className="preview-state preview-error" role="alert">
+                  <FileText size={24} />
+                  <span>{previewError || "PDF preview is unavailable."}</span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -345,15 +415,46 @@ export function DocumentWorkspace({ documentId }: { documentId: string }) {
             </span>
             <div>
               <h2 id="chat-heading">Ask DocMind</h2>
-              <p>Answers stay with this session.</p>
+              <p>
+                <span className="chat-online-dot" /> Ready for this document
+              </p>
             </div>
+            {messages.length > 0 && (
+              <button
+                className="chat-reset"
+                type="button"
+                aria-label="Start a new chat session"
+                onClick={() => {
+                  setMessages([]);
+                  setChatError("");
+                }}
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
           </div>
           <div className="chat-log" role="log" aria-live="polite">
             {messages.length === 0 && (
               <div className="chat-empty">
+                <span className="chat-welcome-mark">
+                  <MessageSquare size={19} />
+                </span>
+                <h3>Explore this document.</h3>
                 <p>
-                  Ask about an argument, idea, name, or detail in this document.
+                  I’ll answer from its pages and show where each idea came from.
                 </p>
+                <div className="chat-suggestions">
+                  {suggestedQuestions.map((suggestion) => (
+                    <button
+                      type="button"
+                      key={suggestion}
+                      disabled={document.status !== "ready" || chatting}
+                      onClick={() => void sendQuestion(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((message) => (

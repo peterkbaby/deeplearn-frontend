@@ -39,7 +39,10 @@ test("uploads, opens, chats with, and deletes a document", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "sample.pdf" })).toBeVisible();
   await expect(page.locator(".summary-text strong")).toHaveText("Main idea");
   await expect(page.locator(".summary-text li")).toHaveCount(2);
-  await expect(page.getByText("PDF preview will appear here")).toBeVisible();
+  await expect(page.getByTitle("Preview of sample.pdf")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "What is the main idea?" }),
+  ).toBeVisible();
 
   await page
     .getByLabel("Ask about this document")
