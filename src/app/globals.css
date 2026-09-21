@@ -280,9 +280,10 @@ fieldset {
   line-height: 1.7;
 }
 .field {
+  display: block;
   margin-bottom: 21px;
 }
-.field label,
+.field > span:first-child,
 .photo-form > label {
   display: block;
   font-size: 12px;
@@ -290,7 +291,9 @@ fieldset {
   margin-bottom: 10px;
 }
 .input-wrap {
+  display: block;
   position: relative;
+  width: 100%;
 }
 input:not([type="file"]) {
   width: 100%;
@@ -317,16 +320,21 @@ input[name="password"] {
   padding-right: 45px;
 }
 .password-toggle {
-  border: 0;
+  align-items: center;
   background: none;
+  border: 0;
+  color: #8b9586;
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
   position: absolute;
   right: 4px;
-  top: 3px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 42px;
-  height: 42px;
-  color: #8b9586;
-  display: grid;
-  place-items: center;
+  z-index: 1;
 }
 .button {
   min-height: 47px;
@@ -1176,11 +1184,16 @@ input[name="password"] {
   color: #66765d;
   margin-top: 22px;
 }
+.app-main:has(> .onboarding-card) {
+  display: grid;
+  place-items: center;
+}
 .onboarding-card {
-  width: 100%;
-  max-width: 420px;
-  margin: 30px auto;
+  margin: 0 auto;
+  max-width: 520px;
+  padding: clamp(30px, 5vw, 58px) 0;
   text-align: center;
+  width: 100%;
 }
 .welcome-icon {
   background: #e9efdf;
@@ -2223,6 +2236,7 @@ body {
   .auth-main {
     min-height: 100dvh;
     align-items: stretch;
+    flex-direction: column;
     justify-content: flex-start;
     padding: 104px max(28px, env(safe-area-inset-left)) 30px;
   }
