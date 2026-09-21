@@ -17,7 +17,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 function messageFor(error: unknown) {
   if (!(error instanceof ClientApiError))
     return "We couldn’t load your documents.";
-  if (error.status === 413) return "That PDF is larger than the 50 MB limit.";
+  if (error.status === 413)
+    return "The upload was rejected by the server before DocMind could read it. The proxy upload limit must be at least 50 MB.";
   if (error.status === 422)
     return "We couldn’t process that PDF. Try a different file.";
   if (error.status === 429)
@@ -195,7 +196,7 @@ export function DocumentLibrary({
           </label>
         </div>
 
-        {error && (
+        {error && !uploading && (
           <div className="notice error document-notice" role="alert">
             <span>{error}</span>
             {!uploading && (

@@ -84,9 +84,17 @@ Nginx owns the public routing:
 location /user-service/ { proxy_pass http://127.0.0.1:8000; }
 location = /auth/google { proxy_pass http://127.0.0.1:8000; }
 location = /auth/google/callback { proxy_pass http://127.0.0.1:8000; }
-location /doc-service/ { proxy_pass http://127.0.0.1:8000/; }
+location /doc-service/ {
+    client_max_body_size 55M;
+    proxy_request_buffering off;
+    proxy_pass http://127.0.0.1:8000/;
+}
 location / { proxy_pass http://127.0.0.1:3000; }
 ```
+
+The browser and DocMind accept PDFs up to 50 MB. Nginx must use a slightly
+larger request limit to allow for multipart form overhead. After changing this
+configuration, validate it with `nginx -t` and reload Nginx.
 
 Run the frontend as a normal Next.js server. This project intentionally does
 not use standalone output:

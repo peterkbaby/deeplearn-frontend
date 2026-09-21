@@ -9,7 +9,10 @@ const config: NextConfig = {
   // Next 16.3's CLI TypeScript runner loses --showConfig output under Node 22,
   // which aborts a production build before BUILD_ID is written. Use the stable
   // TypeScript API for this application instead.
-  experimental: { useTypeScriptCli: false },
+  experimental: {
+    useTypeScriptCli: false,
+    proxyClientMaxBodySize: "55mb",
+  },
   async rewrites() {
     // Local development has no Nginx. Production Nginx handles these same
     // paths before they reach Next.js, so this is only a development bridge.
